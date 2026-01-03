@@ -10,7 +10,8 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import {TaskListContext} from "./context/todoContext.jsx";
 import {v4 as uuid} from 'uuid';
 import TaskComponent from "./TaskComponent.jsx";
-import {useEffect, useState} from "react";
+import {useState} from "react";
+import {useLocalStorage} from "./Hooks/useLocalStorage.js";
 
 const theme = createTheme({
     typography: {
@@ -22,7 +23,7 @@ const theme = createTheme({
 });
 
 // Default tasks
-const getDefaultTasks = () => [
+const defaultTasks =  [
     {
         id: uuid(),
         title: 'Task 1',
@@ -49,37 +50,11 @@ const getDefaultTasks = () => [
     }
 ];
 
-// Initialize state from localStorage or default tasks
-const getInitialTasks = () => {
-    try {
-        const storedTasks = localStorage.getItem('tasksList');
-        if (storedTasks) {
-            const parsedTasks = JSON.parse(storedTasks);
-            // Validate that it's an array
-            if (Array.isArray(parsedTasks)) {
-                return parsedTasks;
-            }
-        }
-    } catch (error) {
-        console.error('Error loading tasks from localStorage:', error);
-    }
-
-    // If no valid tasks in localStorage, use defaults
-    const defaultTasks = getDefaultTasks();
-    localStorage.setItem('tasksList', JSON.stringify(defaultTasks));
-    return defaultTasks;
-};
-
 function App() {
     // Initialize state with function to avoid ESLint warning
-    const [tasksList, setTaskList] = useState(getInitialTasks);
+    const [tasksList, setTaskList] = useLocalStorage('tasksList',defaultTasks);
     const [taskTitle, setTaskTitle] = useState('');
-    const [filterMode, setFilterMode] = useState('all'); // all, completed, notCompleted
-
-    // Save to localStorage whenever tasksList changes
-    useEffect(() => {
-        localStorage.setItem('tasksList', JSON.stringify(tasksList));
-    }, [tasksList]);
+    const [filterMode, setFilterMode] = useLocalStorage('filterMode','all');
 
     function addTask() {
         if(taskTitle.trim()) {
@@ -98,7 +73,7 @@ function App() {
     const filteredTasks = tasksList.filter(task => {
         if (filterMode === 'completed') return task.isCompleted;
         if (filterMode === 'notCompleted') return !task.isCompleted;
-        return true; // 'all'
+        return true;
     });
 
     return (

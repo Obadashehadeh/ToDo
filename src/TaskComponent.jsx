@@ -11,7 +11,7 @@ export default function TaskComponent({task}) {
     const {tasksList, setTaskList} = useContext(TaskListContext);
     const [updatedTask, setUpdatedTask] = useState({
         title: task.title,
-        description: task.description // Fixed: was using title for description
+        description: task.description
     });
     const [openDelete, setOpenDelete] = useState(false);
     const [openEdit, setOpenEdit] = useState(false);
@@ -24,7 +24,6 @@ export default function TaskComponent({task}) {
             return t;
         });
         setTaskList(updatedTasksList);
-        // localStorage update handled by App.jsx useEffect
     }
 
     const handleClickOpenDelete = () => {
@@ -39,7 +38,6 @@ export default function TaskComponent({task}) {
         const updatedTasksList = tasksList.filter((t) => t.id !== task.id);
         setTaskList(updatedTasksList);
         setOpenDelete(false);
-        // localStorage update handled by App.jsx useEffect
     };
 
     const handleCloseEdit = () => {
@@ -65,14 +63,11 @@ export default function TaskComponent({task}) {
         });
         setTaskList(updatedTasksList);
         setOpenEdit(false);
-        // localStorage update handled by App.jsx useEffect
     };
 
     const handleClickOpenEdit = () => {
         setOpenEdit(true);
     };
-
-    // Removed the useEffect - it was causing issues and wasn't needed
 
     return (
         <Card sx={{
