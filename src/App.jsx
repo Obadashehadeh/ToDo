@@ -19,81 +19,172 @@ const theme = createTheme({
         ],
         fontWeight: 500,
     }
-
 });
-function App() {
-    const [tasksList ,setTaskList] = useState([
-        {
-            id: uuid(),
-            title: 'Task 1',
-            description: 'Task 1',
-            isCompleted: false,
-        },
-        {
-            id: uuid(),
-            title: 'Task 2',
-            description: 'Task 2',
-            isCompleted: false,
-        },
-        {
-            id: uuid(),
-            title: 'Task 3',
-            description: 'Task 3',
-            isCompleted: false,
-        },
-        {
-            id: uuid(),
-            title: 'Task 4',
-            description: 'Task 4',
-            isCompleted: false,
+
+// Default tasks
+const getDefaultTasks = () => [
+    {
+        id: uuid(),
+        title: 'Task 1',
+        description: 'Task 1',
+        isCompleted: false,
+    },
+    {
+        id: uuid(),
+        title: 'Task 2',
+        description: 'Task 2',
+        isCompleted: false,
+    },
+    {
+        id: uuid(),
+        title: 'Task 3',
+        description: 'Task 3',
+        isCompleted: false,
+    },
+    {
+        id: uuid(),
+        title: 'Task 4',
+        description: 'Task 4',
+        isCompleted: false,
+    }
+];
+
+// Initialize state from localStorage or default tasks
+const getInitialTasks = () => {
+    try {
+        const storedTasks = localStorage.getItem('tasksList');
+        if (storedTasks) {
+            const parsedTasks = JSON.parse(storedTasks);
+            // Validate that it's an array
+            if (Array.isArray(parsedTasks)) {
+                return parsedTasks;
+            }
         }
-    ]);
-    const [taskTitle, setTaskTitle] = useState('');
-    function addTask () {
-        let storedTasks = [];
-        if(taskTitle.trim()) {
-            storedTasks = [...tasksList, {title:taskTitle, description: taskTitle}];
-            setTaskList(storedTasks);
-        }
-        setTaskTitle('');
+    } catch (error) {
+        console.error('Error loading tasks from localStorage:', error);
     }
 
+    // If no valid tasks in localStorage, use defaults
+    const defaultTasks = getDefaultTasks();
+    localStorage.setItem('tasksList', JSON.stringify(defaultTasks));
+    return defaultTasks;
+};
+
+function App() {
+    // Initialize state with function to avoid ESLint warning
+    const [tasksList, setTaskList] = useState(getInitialTasks);
+    const [taskTitle, setTaskTitle] = useState('');
+    const [filterMode, setFilterMode] = useState('all'); // all, completed, notCompleted
+
+    // Save to localStorage whenever tasksList changes
     useEffect(() => {
-        setTaskList(JSON.parse(localStorage.getItem('tasksList')));
-    }, []);
-  return (
-      <ThemeProvider theme={theme}>
+        localStorage.setItem('tasksList', JSON.stringify(tasksList));
+    }, [tasksList]);
 
-              <Container className="container" maxWidth="sm">
-                  {/* Start Header */}
-                  <Typography variant="h2">
-                      My Tasks
-                  </Typography>
+    function addTask() {
+        if(taskTitle.trim()) {
+            const newTask = {
+                id: uuid(),
+                title: taskTitle.trim(),
+                description: taskTitle.trim(),
+                isCompleted: false
+            };
+            setTaskList(prevTasks => [...prevTasks, newTask]);
+            setTaskTitle('');
+        }
+    }
 
-                  <Stack spacing={2} direction="row" alignItems="center" justifyContent="center">
-                      <Button variant="outlined">All Tasks</Button>
-                      <Button variant="outlined">Completed</Button>
-                      <Button variant="outlined">Not Completed</Button>
-                  </Stack>
-                  <TaskListContext.Provider value={{tasksList,setTaskList}}>
-                      {/* Start Task */}
-                      {tasksList.map((task) => (
-                          <TaskComponent key={task.id} task={task} />
-                      ))}
-                      {/* Start Add Task */}
-                  </TaskListContext.Provider>
-                  <Grid container spacing={1} alignItems="stretch" flexDirection="row">
-                      <Grid size={8}>
-                          <TextField value={taskTitle} id="outlined-basic" label="The Title of task" variant="outlined" fullWidth onChange={(e) => setTaskTitle(e.target.value)} />
-                      </Grid>
-                      <Grid size={4}>
-                          <Button variant="outlined" fullWidth style={{height:"100%"}} onClick={addTask}>Add Task</Button>
-                      </Grid>
-                  </Grid>
-              </Container>
+    // Filter tasks based on mode
+    const filteredTasks = tasksList.filter(task => {
+        if (filterMode === 'completed') return task.isCompleted;
+        if (filterMode === 'notCompleted') return !task.isCompleted;
+        return true; // 'all'
+    });
 
-      </ThemeProvider>
-  )
+    return (
+        <ThemeProvider theme={theme}>
+            <Container className="container" maxWidth="sm">
+                {/* Start Header */}
+                <Typography variant="h2">
+                    My Tasks
+                </Typography>
+
+                <Stack spacing={2} direction="row" alignItems="center" justifyContent="center">
+                    <Button
+                        variant={filterMode === 'all' ? "contained" : "outlined"}
+                        onClick={() => setFilterMode('all')}
+                    >
+                        All Tasks ({tasksList.length})
+                    </Button>
+                    <Button
+                        variant={filterMode === 'completed' ? "contained" : "outlined"}
+                        onClick={() => setFilterMode('completed')}
+                    >
+                        Completed ({tasksList.filter(t => t.isCompleted).length})
+                    </Button>
+                    <Button
+                        variant={filterMode === 'notCompleted' ? "contained" : "outlined"}
+                        onClick={() => setFilterMode('notCompleted')}
+                    >
+                        Active ({tasksList.filter(t => !t.isCompleted).length})
+                    </Button>
+                </Stack>
+
+                <TaskListContext.Provider value={{tasksList, setTaskList}}>
+                    {/* Start Task */}
+                    {filteredTasks.length === 0 ? (
+                        <Typography
+                            variant="body1"
+                            sx={{
+                                textAlign: 'center',
+                                marginTop: 5,
+                                marginBottom: 5,
+                                opacity: 0.7
+                            }}
+                        >
+                            {filterMode === 'all' && 'No tasks yet. Add one below!'}
+                            {filterMode === 'completed' && 'No completed tasks'}
+                            {filterMode === 'notCompleted' && 'No active tasks'}
+                        </Typography>
+                    ) : (
+                        filteredTasks.map((task) => (
+                            <TaskComponent key={task.id} task={task} />
+                        ))
+                    )}
+                </TaskListContext.Provider>
+
+                {/* Start Add Task */}
+                <Grid container spacing={1} alignItems="stretch" flexDirection="row">
+                    <Grid size={8}>
+                        <TextField
+                            value={taskTitle}
+                            id="outlined-basic"
+                            label="The Title of task"
+                            variant="outlined"
+                            fullWidth
+                            onChange={(e) => setTaskTitle(e.target.value)}
+                            onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                    addTask();
+                                }
+                            }}
+                        />
+                    </Grid>
+                    <Grid size={4}>
+                        <Button
+                            variant="outlined"
+                            fullWidth
+                            style={{height:"100%"}}
+                            onClick={addTask}
+                            disabled={!taskTitle.trim()}
+                        >
+                            Add Task
+                        </Button>
+                    </Grid>
+                </Grid>
+            </Container>
+        </ThemeProvider>
+    );
 }
 
-export default App
+export default App;
