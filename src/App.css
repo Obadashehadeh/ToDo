@@ -1,0 +1,35 @@
+
+#root {
+  margin: 25px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  width: 100vw;
+  text-align: center;
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+.container {
+  border: #535bf2 3px solid;
+  border-radius: 1em;
+  padding: 2em;
+  background: #1a1a1a;
+}
+.iconBtn:hover {
+  background: #cdd0d3 !important;
+  transition: all 0.5s ease-in-out;
+
+}
+.iconBtn:active {
+  background: #0d4778 !important;
+}
+.iconBtn:focus {
+  outline: none;
+}
